@@ -1,10 +1,10 @@
 import LinearAlgebra: dot
 
-function qth_abs_moment(X, τ, q)
+function qth_abs_moment(X::Vector{T}, τ, q) where T <: Real
     #Calculte Q = E[|X(t+ τ) - X(t)|^q]
     #check τ is feasible 
     if τ >= length(X)
-        error("τ is too large!")
+        throw(DimensionMismatch("τ is too large!"))
     end
     #Q = E[|X(t+ τ) - X(t)|^q]
     Q = 0.
@@ -18,7 +18,25 @@ function qth_abs_moment(X, τ, q)
     Q / (length(C) - τ)
 end
 
-function zeta_estimator!(Y, S, X, q; τ_range = 1:19)
+function lsq_estimator(Y::Vector{T}, S::Vector{T}) where T <: Real
+    N = length(Y)
+    if N != length(S)
+        throw(DimensionMismatch("Dimensions do not match!"))
+    end
+    Ss = sum(S)
+    Sy = sum(Y)
+    Ssy = dot(S, Y)
+    Sss = dot(S, S)
+    Syy = dot(Y, Y)
+    ζ = (N*Ssy - Ss*Sy) / (N*Sss - Ss^2)
+    sϵ2 = (1 / (N*(N-2))) * (N*Syy - Sy^2 - ζ^2*(N*Sss - Ss^2))
+    SD = sqrt(
+        (N*sϵ2) / (N*Sss - Ss^2)
+    )
+    ζ, SD
+end
+
+function zeta_estimator!(Y::Vector{T}, S::Vector{T}, X::Vector{T}, τ_range, q) where T <: Real
     #ζ(q) = qH(q) where H is the GHE 
     #let Q = E[|X(t+ τ) - X(t)|^q] = K(q)τ^ζ(q)
     #take logarithms and rearrange
@@ -30,8 +48,10 @@ function zeta_estimator!(Y, S, X, q; τ_range = 1:19)
 
     #form Y 
     N = length(τ_range)
-    #Y = Vector{Float64}(undef, N)
-    #S = Vector{Float64}(undef, N)
+
+    if (length(Y) != N) || (length(S) != N)
+        error("Incorrect buffer lengths!")
+    end
 
     #calculate regression data
     @inbounds for i in 1:N
@@ -40,16 +60,14 @@ function zeta_estimator!(Y, S, X, q; τ_range = 1:19)
         S[i] = log(τ)
     end
 
-    data = DataFrames.DataFrame(Y = Y, S = S)
-    model = GLM.lm(GLM.@formula(Y ~ S), data)
-    ζ = GLM.coef(model)[2]
-    #get standard error 
-    SD = GLM.stderror(model)[2]
+    #simple regression formulae
+    ζ, SD = lsq_estimator(Y, S)
+
     #note ζ(q) = qH(q), so H(q) = ζ(q) / q 
     return ζ, SD
 end
 
-function zeta_estimator(X, q, τ_range = 1:19)
+function zeta_estimator(X, τ_range, q)
     #ζ(q) = qH(q) where H is the GHE 
     #let Q = E[|X(t+ τ) - X(t)|^q] = K(q)τ^ζ(q)
     #take logarithms and rearrange
@@ -63,47 +81,109 @@ function zeta_estimator(X, q, τ_range = 1:19)
     N = length(τ_range)
     Y = Vector{Float64}(undef, N)
     S = Vector{Float64}(undef, N)
-    zeta_estimator!(Y, S, X, q, τ_range = τ_range)
+    zeta_estimator!(Y, S, X, τ_range,  q)
 end
 
-function zeta_estimator_range!(buffer, X; τ_range = 1:19, q_range = 0.:0.1:1.)
+function zeta_estimator_range!(range_buffer, Y, S, X, τ_range, q_range)
     L = length(q_range)
     @inbounds for i in 1:L
         q = q_range[i]
-        ζ, S = zeta_estimator(X, q, τ_range)
-        buffer[i, 1] = ζ
-        buffer[i, 2] = S
+        ζ, SD = zeta_estimator!(Y, S, X, τ_range, q)
+        range_buffer[i, 1] = ζ
+        range_buffer[i, 2] = SD
     end
 end
 
-function zeta_estimator_range(X; τ_range = 1:19, q_range = 0.:0.1:1.)
+"""
+    zeta_estimator_range(X, τ_range, q_range)
+
+Calculate ``\\zeta (q)`` that satifies:
+
+``\\ln \\left(E\\left[|X(t+\\tau)-X(t)|^q\\right]\right)=\\zeta(q) \\ln (\\tau)+\\ln (K(q))``
+
+for some series ``X(t)``, over the vector `q_range`. 
+
+Returns a `(length(q_range), 2)` matrix where the first column contains the values of the ``\\zeta(q)`` for different `q` and the second column contains the standard errors.
+
+See also [`hurst_exponent`](@ref).
+"""
+function zeta_estimator_range(X, τ_range, q_range)
     L = length(q_range)
-    buffer = Matrix{Float64}(undef, L, 2)
-    zeta_estimator_range!(buffer, X; τ_range = τ_range, q_range = q_range)
-    buffer
+    range_buffer = Matrix{Float64}(undef, L, 2)
+    N = length(τ_range)
+    Y = Vector{Float64}(undef, N)
+    S = similar(Y)
+    zeta_estimator_range!(range_buffer, Y, S, X, τ_range, q_range)
+    range_buffer
 end
 
-function generalised_hurst_range!(buffer, X; τ_range = 1:19, q_range = 0.:0.1:1.)
+function generalised_hurst_range!(buffer, Y, S, X, τ_range, q_range)
     L = length(q_range)
-    zeta_estimator_range!(buffer, X, τ_range = τ_range, q_range = q_range)
+    zeta_estimator_range!(buffer, Y, S, X, τ_range, q_range)
     @. buffer[:, 1] = buffer[:, 1] / q_range
 end
 
-function generalised_hurst_range(X; τ_range = 1:19, q_range = 0.:0.1:1.)
+"""
+    generalised_hurst_range(X, τ_range, q_range)
+
+Calculate the generalised Hurst exponent (GHE) of the series `X` with absolute moments `q_range` over the range `τ_range`, along with its standard error.
+
+Returns a `(length(q_range), 2)` matrix where the first column contains the values of the GHE and the second column contains the standard errors.
+
+See also [`hurst_exponent`](@ref).
+
+# Examples
+```jldoctest
+julia> X = accumulate(+, randn(1000));
+
+julia> q_range = 0.:0.1:1.; tau_range = 1:19;
+
+julia> generalised_hurst_range(X, tau_range, q_range);
+```
+"""
+function generalised_hurst_range(X, τ_range, q_range)
     L = length(q_range)
     out = Matrix{Float64}(undef, L, 2)
-    generalised_hurst_range!(out, X, τ_range = τ_range, q_range = q_range)
+    N = length(τ_range)
+    Y = Vector{Float64}(undef, N)
+    S = similar(Y)
+
+    generalised_hurst_range!(out, Y, S, X, τ_range, q_range)
     out
 end
 
-function generalised_hurst_exponent(X, q; τ_range = 1:19)
-    generalised_hurst_range(X; τ_range = τ_range, q_range = q)
+"""
+    generalised_hurst_exponent(X, τ_range, q)
+
+Calculate the generalised Hurst exponent of the series `X` with absolute moment `q` over the range `τ_range` along with its standard error.
+
+See also [`hurst_exponent`](@ref).
+
+# Examples
+```jldoctest
+julia> X = accumulate(+, randn(1000));
+
+julia> generalised_hurst_exponent(X, 1:19, 0.5);
+```
+"""
+generalised_hurst_exponent(X, τ_range, q) =  generalised_hurst_range(X, τ_range, q)
+
+"""
+    hurst_exponent(X, τ_range)
+
+Calculate the Hurst exponent of the series `X` over the range `τ_range` along with its standard error.
+
+See [Buonocore et al. 2016](https://doi.org/10.1016/j.chaos.2015.11.022).
+
+# Examples
+```jldoctest
+julia> X = accumulate(+, randn(1000));
+
+julia> isapprox(hurst_exponent(X, 1:19)[1], 0.5, atol = 0.1)
+true
+```
+"""
+function hurst_exponent(X::Vector{T}, τ_range) where T <: Real
+    generalised_hurst_range(X, τ_range, 1)
 end
 
-function hurst_exponent!(buffer, X; τ_range = 1:19)
-    generalised_hurst_range!(buffer, X, τ_range = τ_range, q_range = 1)
-end
-
-function hurst_exponent(X; τ_range = 1:19)
-    generalised_hurst_range(X, τ_range = τ_range, q_range = 1)
-end

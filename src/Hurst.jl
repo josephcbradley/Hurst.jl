@@ -1,16 +1,13 @@
 module Hurst
 
-import GLM, DataFrames
+import LinearAlgebra
 
 # Write your package code here.
 include("generalised_hurst.jl")
 
 export 
-    qth_abs_moment,
-    zeta_estimator,
-    generalised_hurst_range, 
-    generalised_hurst_exponent, 
     hurst_exponent, 
+    generalised_hurst_exponent,
+    generalised_hurst_range
     zeta_estimator_range
-    generalised_hurst_range!
 end
