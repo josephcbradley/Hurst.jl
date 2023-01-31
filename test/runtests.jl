@@ -2,5 +2,6 @@ using Hurst
 using Test
 
 @testset "Hurst.jl" begin
-    # Write your tests here.
+    include("linreg_tests.jl")
+    include("hurst_tests.jl")
 end
