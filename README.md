@@ -1,5 +1,3 @@
-![Hurst.jl logo](https://github.com/josephcbradley/Hurst.jl/blob/main/docs/src/assets/logo.png "Hurst.jl logo")
-
 # Hurst.jl
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://josephcbradley.github.io/Hurst.jl/stable/)
