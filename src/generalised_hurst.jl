@@ -50,7 +50,7 @@ function zeta_estimator!(Y::Vector{T}, S::Vector{T}, X::Vector{T}, τ_range, q) 
     N = length(τ_range)
 
     if (length(Y) != N) || (length(S) != N)
-        error("Incorrect buffer lengths!")
+        throw(DimensionMismatch("Dimensions do not match!"))
     end
 
     #calculate regression data

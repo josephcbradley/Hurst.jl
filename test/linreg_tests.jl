@@ -6,4 +6,7 @@
     β_matrix = (x' * x)^-1 * (x' * y)
     β_estimator = Hurst.lsq_estimator(y, x)[1]
     @test β_matrix ≈ β_estimator
+
+    #check that dimension error is thrown 
+    @test_throws DimensionMismatch Hurst.lsq_estimator(rand(10), rand(11))
 end
