@@ -3,28 +3,28 @@
 X = accumulate(+, randn(1000))
 tau_range = 1:19
 hurst_exponent(X, tau_range)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1×2 Matrix{Float64}:
- 0.491538  0.00316706</code></pre><p>This always returns the standard error of the Hurst statistic too.</p><p>Given that Hurst exponents are one measure of a series&#39; scaling properties, Generalised Hurst Exponents (GHEs) can be used to detect more complex scaling properties and infer multiscaling behaviour. For example, to calculate the Hurst exponent over a range of moments <code>q_range</code>:</p><pre><code class="language-julia hljs">using Hurst
+ 0.490967  0.00306557</code></pre><p>This always returns the standard error of the Hurst statistic too.</p><p>Given that Hurst exponents are one measure of a series&#39; scaling properties, Generalised Hurst Exponents (GHEs) can be used to detect more complex scaling properties and infer multiscaling behaviour. For example, to calculate the Hurst exponent over a range of moments <code>q_range</code>:</p><pre><code class="language-julia hljs">using Hurst
 q_range = -1:0.1:1
 tau_range = 30:250
 X = accumulate(+, randn(1000))
 generalised_hurst_range(X, tau_range, q_range)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">21×2 Matrix{Float64}:
- 0.431563  0.0946175
- 0.431126  0.0745554
- 0.432865  0.0562963
- 0.43731   0.0402238
- 0.444656  0.0263958
- 0.454007  0.0152575
- 0.462573  0.0082112
- 0.46768   0.00478804
- 0.469851  0.00274803
- 0.470437  0.00121584
+ 0.852802  0.0865714
+ 0.833707  0.0661273
+ 0.818474  0.04779
+ 0.807654  0.0321613
+ 0.800334  0.0198864
+ 0.794825  0.0116292
+ 0.789358  0.00687868
+ 0.783408  0.00406529
+ 0.777309  0.00219483
+ 0.7713    0.00089465
  ⋮         
- 0.467875  0.00177816
- 0.466226  0.00243988
- 0.464346  0.00300105
- 0.462303  0.00349211
- 0.460146  0.00393838
- 0.457918  0.00436052
- 0.455651  0.0047748
- 0.453372  0.0051935
- 0.451103  0.00562539</code></pre><h2 id="Many-series"><a class="docs-heading-anchor" href="#Many-series">Many series</a><a id="Many-series-1"></a><a class="docs-heading-anchor-permalink" href="#Many-series" title="Permalink"></a></h2><p>For larger investigations, we can usefully reuse most of the memory used in the hurst analysis. For example, suppose we want to calculate the <span>$\zeta(q)$</span> estimator for <code>A</code> and <code>B</code>. To calculate the exponent for <code>A</code>, <code>Hurst.jl</code> will create dependent and independet variables for a regression calculation, that are normally discarded after use...</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../ref/">Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Tuesday 31 January 2023 14:12">Tuesday 31 January 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ 0.754256  0.000947953
+ 0.748917  0.00112738
+ 0.74376   0.00117033
+ 0.738792  0.00111115
+ 0.73402   0.000982223
+ 0.729449  0.000824142
+ 0.725079  0.000706825
+ 0.720912  0.000736424
+ 0.716945  0.000957129</code></pre><h2 id="Many-series"><a class="docs-heading-anchor" href="#Many-series">Many series</a><a id="Many-series-1"></a><a class="docs-heading-anchor-permalink" href="#Many-series" title="Permalink"></a></h2><p>For larger investigations, we can usefully reuse most of the memory used in the hurst analysis. For example, suppose we want to calculate the <span>$\zeta(q)$</span> estimator for <code>A</code> and <code>B</code>. To calculate the exponent for <code>A</code>, <code>Hurst.jl</code> will create dependent and independet variables for a regression calculation, that are normally discarded after use...</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../ref/">Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Tuesday 31 January 2023 14:48">Tuesday 31 January 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
