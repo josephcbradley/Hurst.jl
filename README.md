@@ -6,10 +6,10 @@
 
 This package implements methods for estimating [Generalised Hurst Exponents](https://en.wikipedia.org/wiki/Hurst_exponent#Generalized_exponent) (GHEs).
 
-The package is not yet available on the Julia registry, so add it as follows: 
+Add the package as usual: 
 
 ```
-using Pkg; Pkg.add("https://github.com/josephcbradley/Hurst.jl")
+using Pkg; Pkg.add("Hurst")
 ```
 
 At the moment, the package only implements one method of estimation, and not the most state-of-the-art method at that. In time this will be updated - the goal of the package is to be allow the user to flexibly calculate GHEs in whatever way is most appropriate for the task at hand.
