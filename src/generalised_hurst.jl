@@ -1,24 +1,24 @@
 import LinearAlgebra: dot
 
-function qth_abs_moment(X::Vector{T}, τ, q) where T <: Real
+function qth_abs_moment(X::Vector{T}, τ, q) where {T<:Real}
     #Calculte Q = E[|X(t+ τ) - X(t)|^q]
     #check τ is feasible 
     if τ >= length(X)
         throw(DimensionMismatch("τ is too large!"))
     end
     #Q = E[|X(t+ τ) - X(t)|^q]
-    Q = 0.
+    Q = 0.0
     C = CartesianIndices(X)
     L = last(C)
     I1 = oneunit(L)
     #with gap τ
-    for t in first(C):(last(C) - (τ * I1))
-        @inbounds Q += abs(X[t + (τ * I1)] - X[t]) ^ q
+    for t = first(C):(last(C)-(τ*I1))
+        @inbounds Q += abs(X[t+(τ*I1)] - X[t])^q
     end
     Q / (length(C) - τ)
 end
 
-function lsq_estimator(Y::Vector{T}, S::Vector{T}) where T <: Real
+function lsq_estimator(Y::Vector{T}, S::Vector{T}) where {T<:Real}
     N = length(Y)
     if N != length(S)
         throw(DimensionMismatch("Dimensions do not match!"))
@@ -28,15 +28,19 @@ function lsq_estimator(Y::Vector{T}, S::Vector{T}) where T <: Real
     Ssy = dot(S, Y)
     Sss = dot(S, S)
     Syy = dot(Y, Y)
-    ζ = (N*Ssy - Ss*Sy) / (N*Sss - Ss^2)
-    sϵ2 = (1 / (N*(N-2))) * (N*Syy - Sy^2 - ζ^2*(N*Sss - Ss^2))
-    SD = sqrt(
-        (N*sϵ2) / (N*Sss - Ss^2)
-    )
+    ζ = (N * Ssy - Ss * Sy) / (N * Sss - Ss^2)
+    sϵ2 = (1 / (N * (N - 2))) * (N * Syy - Sy^2 - ζ^2 * (N * Sss - Ss^2))
+    SD = sqrt((N * sϵ2) / (N * Sss - Ss^2))
     ζ, SD
 end
 
-function zeta_estimator!(Y::Vector{T}, S::Vector{T}, X::Vector{T}, τ_range, q) where T <: Real
+function zeta_estimator!(
+    Y::Vector{T},
+    S::Vector{T},
+    X::Vector{T},
+    τ_range,
+    q,
+) where {T<:Real}
     #ζ(q) = qH(q) where H is the GHE 
     #let Q = E[|X(t+ τ) - X(t)|^q] = K(q)τ^ζ(q)
     #take logarithms and rearrange
@@ -54,7 +58,7 @@ function zeta_estimator!(Y::Vector{T}, S::Vector{T}, X::Vector{T}, τ_range, q) 
     end
 
     #calculate regression data
-    @inbounds for i in 1:N
+    @inbounds for i = 1:N
         τ = τ_range[i]
         Y[i] = log(qth_abs_moment(X, τ, q))
         S[i] = log(τ)
@@ -81,12 +85,12 @@ function zeta_estimator(X, τ_range, q)
     N = length(τ_range)
     Y = Vector{Float64}(undef, N)
     S = Vector{Float64}(undef, N)
-    zeta_estimator!(Y, S, X, τ_range,  q)
+    zeta_estimator!(Y, S, X, τ_range, q)
 end
 
 function zeta_estimator_range!(range_buffer, Y, S, X, τ_range, q_range)
     L = length(q_range)
-    @inbounds for i in 1:L
+    @inbounds for i = 1:L
         q = q_range[i]
         ζ, SD = zeta_estimator!(Y, S, X, τ_range, q)
         range_buffer[i, 1] = ζ
@@ -166,7 +170,7 @@ julia> X = accumulate(+, randn(1000));
 julia> generalised_hurst_exponent(X, 1:19, 0.5);
 ```
 """
-generalised_hurst_exponent(X, τ_range, q) =  generalised_hurst_range(X, τ_range, q)
+generalised_hurst_exponent(X, τ_range, q) = generalised_hurst_range(X, τ_range, q)
 
 """
     hurst_exponent(X, τ_range)
@@ -183,7 +187,6 @@ julia> isapprox(hurst_exponent(X, 1:19)[1], 0.5, atol = 0.1)
 true
 ```
 """
-function hurst_exponent(X::Vector{T}, τ_range) where T <: Real
+function hurst_exponent(X::Vector{T}, τ_range) where {T<:Real}
     generalised_hurst_range(X, τ_range, 1)
 end
-
