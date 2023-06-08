@@ -31,3 +31,15 @@ end
     @test Hurst.qth_abs_moment(A, 2, 1) == 2.0
     @test_throws DimensionMismatch Hurst.qth_abs_moment(A, 200, 2)
 end
+
+@testset "NaN tests" begin 
+    #if we try to calculate H on a straight line, we should get NaNs 
+    flat_data = ones(100)
+    H, SD = hurst_exponent(flat_data, 1:19)
+    @test isnan(H)
+    @test isnan(SD)
+
+    #try it on a range 
+    range_data = generalised_hurst_exponent(flat_data, 1:19, 0.1:0.1:2.)
+    @test isnan.(range_data) == trues(20, 2)
+end
