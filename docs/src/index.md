@@ -33,4 +33,4 @@ q_range = 0.1:0.1:2.
 generalised_hurst_range(X, tau_range, q_range)
 ```
 
-Hurst exponents (generalised or not) are calculate by performing a regression across a range of values of ``\tau``. It is important to be aware of these values as they can have a significant impact on the results (see [here](https://doi.org/10.1103/PhysRevE.95.042311)). As a result, these values are never supplied by default in functions and must be provided explicitly by the user. Users interest in the details of the calculation are encouraged to look at the above paper and its references.
+Hurst exponents (generalised or not) are calculated by performing a regression across a range of values of ``\tau``. It is important to be aware of these values as they can have a significant impact on the results (see [here](https://doi.org/10.1103/PhysRevE.95.042311)). As a result, these values are never supplied by default in functions and must be provided explicitly by the user. Users interest in the details of the calculation are encouraged to look at the above paper and its references.

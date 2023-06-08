@@ -1,6 +1,9 @@
 using Hurst
 using Documenter
 
+ENV["PLOTS_TEST"] = "true"
+ENV["GKSwstype"] = "100"
+
 DocMeta.setdocmeta!(Hurst, :DocTestSetup, :(using Hurst); recursive = true)
 
 makedocs(;
@@ -14,7 +17,10 @@ makedocs(;
         edit_link = "main",
         assets = String[],
     ),
-    pages = ["Home" => "index.md", "Manual" => "man.md", "Reference" => "ref.md"],
+    pages = ["Home" => "index.md", 
+            "Getting Started" => "getting_started.md", 
+            "Troubleshooting" => "troubleshooting.md", 
+            "Reference" => "ref.md"],
 )
 
 deploydocs(; repo = "github.com/josephcbradley/Hurst.jl", devbranch = "main")
