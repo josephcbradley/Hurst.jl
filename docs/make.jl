@@ -17,10 +17,12 @@ makedocs(;
         edit_link = "main",
         assets = String[],
     ),
-    pages = ["Home" => "index.md", 
-            "Getting Started" => "getting_started.md", 
-            "Troubleshooting" => "troubleshooting.md", 
-            "Reference" => "ref.md"],
+    pages = [
+        "Home" => "index.md",
+        "Getting Started" => "getting_started.md",
+        "Troubleshooting" => "troubleshooting.md",
+        "Reference" => "ref.md",
+    ],
 )
 
 deploydocs(; repo = "github.com/josephcbradley/Hurst.jl", devbranch = "main")
