@@ -18,7 +18,7 @@ Given that Hurst exponents are one measure of a series' scaling properties, Gene
 
 ```@example
 using Hurst
-q_range = -1:0.1:1
+q_range = 0.1:0.1:1
 tau_range = 30:250
 X = accumulate(+, randn(1000))
 generalised_hurst_range(X, tau_range, q_range)
