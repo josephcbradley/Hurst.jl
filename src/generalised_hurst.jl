@@ -58,7 +58,7 @@ function zeta_estimator!(
     end
 
     #calculate regression data
-    Threads.@threads :greedy for i = 1:N
+    Threads.@threads for i = 1:N
         @inbounds begin
             τ = τ_range[i]
             Y[i] = log(qth_abs_moment(X, τ, q))
