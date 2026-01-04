@@ -39,7 +39,8 @@ function zeta_estimator!(
     S::Vector{T},
     X::Vector{T},
     τ_range,
-    q,
+    q;
+    use_threading::Bool=true,
 ) where {T<:Real}
     #ζ(q) = qH(q) where H is the GHE 
     #let Q = E[|X(t+ τ) - X(t)|^q] = K(q)τ^ζ(q)
@@ -58,11 +59,21 @@ function zeta_estimator!(
     end
 
     #calculate regression data
-    Threads.@threads for i = 1:N
-        @inbounds begin
-            τ = τ_range[i]
-            Y[i] = log(qth_abs_moment(X, τ, q))
-            S[i] = log(τ)
+    if use_threading
+        Threads.@threads for i = 1:N
+            @inbounds begin
+                τ = τ_range[i]
+                Y[i] = log(qth_abs_moment(X, τ, q))
+                S[i] = log(τ)
+            end
+        end
+    else
+        for i = 1:N
+            @inbounds begin
+                τ = τ_range[i]
+                Y[i] = log(qth_abs_moment(X, τ, q))
+                S[i] = log(τ)
+            end
         end
     end
 
@@ -73,7 +84,7 @@ function zeta_estimator!(
     return ζ, SD
 end
 
-function zeta_estimator(X, τ_range, q)
+function zeta_estimator(X, τ_range, q; use_threading::Bool=true)
     #ζ(q) = qH(q) where H is the GHE 
     #let Q = E[|X(t+ τ) - X(t)|^q] = K(q)τ^ζ(q)
     #take logarithms and rearrange
@@ -87,14 +98,14 @@ function zeta_estimator(X, τ_range, q)
     N = length(τ_range)
     Y = Vector{Float64}(undef, N)
     S = Vector{Float64}(undef, N)
-    zeta_estimator!(Y, S, X, τ_range, q)
+    zeta_estimator!(Y, S, X, τ_range, q; use_threading=use_threading)
 end
 
-function zeta_estimator_range!(range_buffer, Y, S, X, τ_range, q_range)
+function zeta_estimator_range!(range_buffer, Y, S, X, τ_range, q_range; use_threading::Bool=true)
     L = length(q_range)
     @inbounds for i = 1:L
         q = q_range[i]
-        ζ, SD = zeta_estimator!(Y, S, X, τ_range, q)
+        ζ, SD = zeta_estimator!(Y, S, X, τ_range, q; use_threading=use_threading)
         range_buffer[i, 1] = ζ
         range_buffer[i, 2] = SD
     end
@@ -113,19 +124,19 @@ Returns a `(length(q_range), 2)` matrix where the first column contains the valu
 
 See also [`hurst_exponent`](@ref).
 """
-function zeta_estimator_range(X, τ_range, q_range)
+function zeta_estimator_range(X, τ_range, q_range; use_threading::Bool=true)
     L = length(q_range)
     range_buffer = Matrix{Float64}(undef, L, 2)
     N = length(τ_range)
     Y = Vector{Float64}(undef, N)
     S = similar(Y)
-    zeta_estimator_range!(range_buffer, Y, S, X, τ_range, q_range)
+    zeta_estimator_range!(range_buffer, Y, S, X, τ_range, q_range; use_threading=use_threading)
     range_buffer
 end
 
-function generalised_hurst_range!(buffer, Y, S, X, τ_range, q_range)
+function generalised_hurst_range!(buffer, Y, S, X, τ_range, q_range; use_threading::Bool=true)
     L = length(q_range)
-    zeta_estimator_range!(buffer, Y, S, X, τ_range, q_range)
+    zeta_estimator_range!(buffer, Y, S, X, τ_range, q_range; use_threading=use_threading)
     @. buffer[:, 1] = buffer[:, 1] / q_range
     # If the process does not actually scale in the assumed way, the linear regression method will throw values 
     # for H outside [0, 1]. To make this clear, we will set any such values of the buffer to NaN 
@@ -154,14 +165,14 @@ julia> q_range = 0.:0.1:1.; tau_range = 1:19;
 julia> generalised_hurst_range(X, tau_range, q_range);
 ```
 """
-function generalised_hurst_range(X, τ_range, q_range)
+function generalised_hurst_range(X, τ_range, q_range; use_threading::Bool=true)
     L = length(q_range)
     out = Matrix{Float64}(undef, L, 2)
     N = length(τ_range)
     Y = Vector{Float64}(undef, N)
     S = similar(Y)
 
-    generalised_hurst_range!(out, Y, S, X, τ_range, q_range)
+    generalised_hurst_range!(out, Y, S, X, τ_range, q_range; use_threading=use_threading)
     out
 end
 
@@ -179,7 +190,7 @@ julia> X = accumulate(+, randn(1000));
 julia> generalised_hurst_exponent(X, 1:19, 0.5);
 ```
 """
-generalised_hurst_exponent(X, τ_range, q) = generalised_hurst_range(X, τ_range, q)
+generalised_hurst_exponent(X, τ_range, q; use_threading::Bool=true) = generalised_hurst_range(X, τ_range, q; use_threading=use_threading)
 
 """
     hurst_exponent(X, τ_range)
@@ -196,6 +207,6 @@ julia> isapprox(hurst_exponent(X, 1:19)[1], 0.5, atol = 0.1)
 true
 ```
 """
-function hurst_exponent(X::Vector{T}, τ_range) where {T<:Real}
-    generalised_hurst_range(X, τ_range, 1)
+function hurst_exponent(X::Vector{T}, τ_range; use_threading::Bool=true) where {T<:Real}
+    generalised_hurst_range(X, τ_range, 1; use_threading=use_threading)
 end
