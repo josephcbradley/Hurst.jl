@@ -3,19 +3,17 @@ import LinearAlgebra: dot
 function qth_abs_moment(X::Vector{T}, τ, q) where {T<:Real}
     #Calculte Q = E[|X(t+ τ) - X(t)|^q]
     #check τ is feasible 
-    if τ >= length(X)
-        throw(DimensionMismatch("τ is too large!"))
+    if τ <= 0 || τ >= length(X)
+        throw(DimensionMismatch("τ is out of bounds!"))
     end
     #Q = E[|X(t+ τ) - X(t)|^q]
     Q = 0.0
-    C = CartesianIndices(X)
-    L = last(C)
-    I1 = oneunit(L)
+    n = length(X)
     #with gap τ
-    for t = first(C):(last(C)-(τ*I1))
-        @inbounds Q += abs(X[t+(τ*I1)] - X[t])^q
+    for t = 1:(n-τ)
+        @inbounds Q += abs(X[t+τ] - X[t])^q
     end
-    Q / (length(C) - τ)
+    Q / (n - τ)
 end
 
 function lsq_estimator(Y::Vector{T}, S::Vector{T}) where {T<:Real}
@@ -28,9 +26,16 @@ function lsq_estimator(Y::Vector{T}, S::Vector{T}) where {T<:Real}
     Ssy = dot(S, Y)
     Sss = dot(S, S)
     Syy = dot(Y, Y)
-    ζ = (N * Ssy - Ss * Sy) / (N * Sss - Ss^2)
-    sϵ2 = (1 / (N * (N - 2))) * (N * Syy - Sy^2 - ζ^2 * (N * Sss - Ss^2))
-    SD = sqrt((N * sϵ2) / (N * Sss - Ss^2))
+
+    # Check for division by zero
+    den = N * Sss - Ss^2
+    if N <= 2 || den <= 0
+        return (NaN, NaN)
+    end
+
+    ζ = (N * Ssy - Ss * Sy) / den
+    sϵ2 = (1 / (N * (N - 2))) * (N * Syy - Sy^2 - ζ^2 * den)
+    SD = sqrt((N * sϵ2) / den)
     ζ, SD
 end
 
@@ -103,6 +108,9 @@ end
 
 function zeta_estimator_range!(range_buffer, Y, S, X, τ_range, q_range; use_threading::Bool=true)
     L = length(q_range)
+    if size(range_buffer) != (L, 2)
+        throw(DimensionMismatch("range_buffer has incorrect dimensions"))
+    end
     @inbounds for i = 1:L
         q = q_range[i]
         ζ, SD = zeta_estimator!(Y, S, X, τ_range, q; use_threading=use_threading)
@@ -136,15 +144,24 @@ end
 
 function generalised_hurst_range!(buffer, Y, S, X, τ_range, q_range; use_threading::Bool=true)
     L = length(q_range)
+    if size(buffer) != (L, 2)
+        throw(DimensionMismatch("buffer has incorrect dimensions"))
+    end
     zeta_estimator_range!(buffer, Y, S, X, τ_range, q_range; use_threading=use_threading)
-    @. buffer[:, 1] = buffer[:, 1] / q_range
     # If the process does not actually scale in the assumed way, the linear regression method will throw values 
     # for H outside [0, 1]. To make this clear, we will set any such values of the buffer to NaN 
-
-    #set Hs 
-    buffer[isnan.(buffer[:, 1]), 1] .= NaN
-    #set SDs
-    buffer[isnan.(buffer[:, 1]), 2] .= NaN
+    for i = 1:L
+        @inbounds begin
+            q = q_range[i]
+            H = buffer[i, 1] / q
+            if isfinite(H) && 0 <= H <= 1
+                buffer[i, 1] = H
+            else
+                buffer[i, 1] = NaN
+                buffer[i, 2] = NaN
+            end
+        end
+    end
 end
 
 """
